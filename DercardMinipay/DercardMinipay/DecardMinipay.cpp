@@ -8,7 +8,7 @@
 
 BOOL  bPreviousStatus = FALSE;
 
-DWORD GetTerminalStatus(void)
+DWORD GetTerminalStatus()
 {
    DWORD dwStart, dwEnd;
    dwStart= GetTickCount();
@@ -75,6 +75,8 @@ DWORD GetTerminalStatus(void)
 		bPreviousStatus = bPresentStatus;
 		return  4;                         //NotExist;s  
 	}
+
+	return 0;
 }
 
 void FlushDevList(void)
@@ -114,7 +116,7 @@ void FlushDevList(void)
 	}
 }
 
-BOOL  Init(void )
+BOOL  Init( )
 {
 	BOOL ret = FALSE;
 	FlushDevList();

@@ -93,7 +93,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -115,6 +115,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="..\IncludeCert\App;..\IncludeCert\CCID;..\IncludeCert\Global;..\IncludeCert\CspAPI;..\IncludeCert\SafeChannel_Tool;..\IncludeCert;..\IncludeCert\Tool"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;DERCARDMINIPAY_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
