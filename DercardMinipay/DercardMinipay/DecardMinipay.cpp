@@ -5,6 +5,7 @@
 #include "globle.h"
 #include <string>
 #include "DecardMiniPay.h"
+#include "sha1.h"
 
 BOOL  bPreviousStatus = FALSE;
 
@@ -119,20 +120,28 @@ void FlushDevList(void)
 BOOL  Init( )
 {
 	BOOL ret = FALSE;
+
 	FlushDevList();
-	ConnectDev();
-	ret = InitData();
-	if(ret == FALSE)
+
+	ret =ConnectDev();
+	if(!ret)
 	{
 		goto END;
 	}
+
+	ret = InitData();
+    if(!ret)
+	{
+		goto END;
+	}
+
     ret = TRUE;
 END:
 	CloseDev();
 	return ret;
 }
 
-BOOL ReadCert(DWORD dwCertType, BYTE * pOutBuf, DWORD *OutLength)
+BOOL ReadCert(int CertType, BYTE * pOutBuf, DWORD *OutLength)
 {
 	DWORD   dwRet;
 	BOOL    bResult = FALSE;
@@ -149,8 +158,13 @@ BOOL ReadCert(DWORD dwCertType, BYTE * pOutBuf, DWORD *OutLength)
 	pbCmd[INS] = 0x23;
 	pbCmd[P1] = 0x00;
 
-	switch(dwCertType)
+	switch(CertType)
 	{
+	case eSafeChannelAlgorithm_ASYMKEY_INDEX_Termil:
+		{
+			pbCmd[P2] = 0x00;
+		}
+		break;
 	case eSafeChannelAlgorithm_ASYMKEY_INDEX_CAROOT:
 		{
 			pbCmd[P2] = 0x01;
@@ -180,11 +194,12 @@ END:
 	return bResult;
 }
 
-BOOL  AddCert(DWORD dwCertType, BYTE *pInBuf, DWORD InLength)
+BOOL  AddCert(int CertType, BYTE *pInBuf, DWORD InLength)
 {
 
 	DWORD dwRet;
 	BOOL  bResult = FALSE;
+	BYTE pContainer[CONTAINER_BUFF_SIZE] = {0};
 	BYTE  pbCmd[512]={0};
 	DWORD dwSlen = 0;
 	DWORD len = InLength;
@@ -196,59 +211,72 @@ BOOL  AddCert(DWORD dwCertType, BYTE *pInBuf, DWORD InLength)
 
 
 	ConnectDev();
-
-	pbCmd[CLA] = 0x7E;
-	pbCmd[INS] = 0x20;
-
-	switch(dwCertType)
+	
+	if(CertType == 0)
 	{
-	case eSafeChannelAlgorithm_ASYMKEY_INDEX_CAROOT:
+      bResult = CertRsaImport(eSafeChannelAlgorithm_ASYMKEY_INDEX_Termil, pInBuf, InLength, pContainer);
+	  if(!bResult)
+	  {
+		  bResult = FALSE;
+		  goto END;
+	  }
+	}
+	else
+	{
+		pbCmd[CLA] = 0x7E;
+		pbCmd[INS] = 0x20;
+
+		switch(CertType)
 		{
-			pbCmd[P1] = 0x10;
+		case eSafeChannelAlgorithm_ASYMKEY_INDEX_CAROOT:
+			{
+				pbCmd[P1] = 0x10;
+			}
+			break;
+		case eSafeChannelAlgorithm_ASYMKEY_INDEX_Pin:
+			{
+				pbCmd[P1] = 0x40;
+			}
+			break;
+		default:
+			goto END;
 		}
-		break;
-	case eSafeChannelAlgorithm_ASYMKEY_INDEX_Pin:
-		{
-			pbCmd[P1] = 0x40;
+
+		if( len > 0 )
+		{ 
+			while(len)
+			{
+				datalen = (len > 0x80) ? 0x80:len;
+
+				if(i == 0)
+				{
+					pbCmd[P2] = 0x80;
+
+				}else
+				{
+					pbCmd[P2] = (len > 0x80) ? 0x00:0x40;
+				}
+
+				pbCmd[Lc] = (BYTE)datalen;
+				memcpy(pbCmd+5, pInBuf+i*0x80, datalen);
+
+				dwSlen = 5 +datalen;
+				dwRet = LCardSendCommand(g_CurDevSel, (PBYTE)pbCmd, dwSlen);
+				if(dwRet!=SCARD_S_SUCCESS)
+				{
+					goto END;
+				}
+
+				i++;
+				len = len - datalen;
+			}
 		}
-		break;
-	default:
-		goto END;
 	}
 
-	if( len > 0 )
-	{ 
-		while(len)
-		{
-			datalen = (len > 0x80) ? 0x80:len;
-
-			if(i == 0)
-			{
-				pbCmd[P2] = 0x80;
-
-			}else
-			{
-				pbCmd[P2] = (len > 0x80) ? 0x00:0x40;
-			}
-
-			pbCmd[Lc] = (BYTE)datalen;
-			memcpy(pbCmd+5, pInBuf+i*0x80, datalen);
-
-			dwSlen = 5 +datalen;
-			dwRet = LCardSendCommand(g_CurDevSel, (PBYTE)pbCmd, dwSlen);
-			if(dwRet!=SCARD_S_SUCCESS)
-			{
-				goto END;
-			}
-
-			i++;
-			len = len - datalen;
-		}
-	}
-
-    bResult = ReadCert(dwCertType, CertData, &CertLen);
+    bResult = ReadCert(CertType, CertData, &CertLen);
 	if(!bResult)
 	{
+		bResult = FALSE;
 		goto END;
 	}
     
@@ -324,6 +352,7 @@ BOOL  GetTerminalID(unsigned char *pOutBuf, DWORD * pOutLength)
 
     FlushDevList();
 	ConnectDev();
+
 	pbCmd[CLA] = 0x7E;
 	pbCmd[INS] = 0x10;
 	pbCmd[P1] = 0x00;
@@ -351,4 +380,112 @@ BOOL  GetTerminalID(unsigned char *pOutBuf, DWORD * pOutLength)
 END:
   CloseDev();
   return bResult;
+}
+
+
+BOOL GenerateRSAKey(int RsaKeyIndex)
+{
+	BOOL ret = FALSE;
+
+	ret = ConnectDev();
+	if (!ret)
+	{
+		goto END;
+	}
+
+    if(RsaKeyIndex == eSafeChannelAlgorithm_ASYMKEY_ALG_RSA)
+	{
+       ret =  PubKeyRsaCreate();
+
+	}else if(RsaKeyIndex == eSafeChannelAlgorithm_ASYMKEY_ALG_RSA_2048)
+	{
+       ret =  PubKeyRsaCreate2048();
+	}
+
+	if(!ret)
+	{
+		ret = FALSE;
+		goto END;
+	}
+
+	ret = TRUE;
+END:
+	return ret;
+}
+
+BOOL ExportPubKeyRsa(int CertType, int RsaKeyIndex, unsigned char *OutPubKey)
+{
+	BOOL ret = FALSE;
+
+	DWORD dwPubKeyBlobLength = 0;
+	stuSafeChannelChildStuRsaPublicKeyBlob stuPubKey;
+	memset(&stuPubKey, 0, sizeof(stuSafeChannelChildStuRsaPublicKeyBlob));
+
+	ret = ConnectDev();
+	if (!ret)
+	{
+		goto END;
+	}
+	if (RsaKeyIndex == eSafeChannelAlgorithm_ASYMKEY_ALG_RSA)
+	{
+		ret = PubKeyRsaExport(CertType, (BYTE *)&stuPubKey, dwPubKeyBlobLength);
+	} 
+	else if (RsaKeyIndex == eSafeChannelAlgorithm_ASYMKEY_ALG_RSA_2048)
+	{
+		ret = PubKeyRsaExport2048(CertType, (BYTE *)&stuPubKey, dwPubKeyBlobLength);
+	}
+	else
+	{
+		goto END;
+	}
+	if (!ret)
+	{
+		goto END;
+	}
+
+    memcpy(OutPubKey, &stuPubKey, sizeof(stuSafeChannelChildStuRsaPublicKeyBlob));
+
+	ret = TRUE;
+END:
+	return ret;
+
+}
+
+
+BOOL PriKeyRsaCompute(int RsaKeyIndex, unsigned char *pInBuf, DWORD InLength, unsigned char *pOutBuf, DWORD *OutLength)
+{
+
+	BOOL ret = FALSE;
+
+	ret = ConnectDev();
+	if (!ret)
+	{
+		goto END;
+	}
+	if (RsaKeyIndex == eSafeChannelAlgorithm_ASYMKEY_ALG_RSA)
+	{
+		ret = PriKeyRsaCulca(pInBuf, InLength, pOutBuf, *OutLength);
+	} 
+	else if (RsaKeyIndex == eSafeChannelAlgorithm_ASYMKEY_ALG_RSA_2048)
+	{
+		ret = PriKeyRsaCulca2048(pInBuf, InLength, pOutBuf, *OutLength);
+	}
+	else
+	{
+		goto END;
+	}
+	if (!ret)
+	{
+		goto END;
+	}
+
+    ret = TRUE;
+END:
+	return ret;
+
+}
+
+void DigestData_SHA1(unsigned char *pInBuf, DWORD InLength, unsigned char Digest[20])
+{
+   SHA1_Data(pInBuf, InLength, Digest);
 }

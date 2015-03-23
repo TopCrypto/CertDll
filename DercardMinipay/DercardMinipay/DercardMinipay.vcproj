@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\IncludeCert\App;..\IncludeCert\CCID;..\IncludeCert\Global;..\IncludeCert\CspAPI;..\IncludeCert\SafeChannel_Tool;..\IncludeCert;..\IncludeCert\Tool"
+				AdditionalIncludeDirectories="..\IncludeCert\App;..\IncludeCert\CCID;..\IncludeCert\Global;..\IncludeCert\CspAPI;..\IncludeCert\SafeChannel_Tool;..\IncludeCert;..\IncludeCert\Tool;..\IncludeCert\HASH"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DERCARDMINIPAY_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -115,7 +115,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\IncludeCert\App;..\IncludeCert\CCID;..\IncludeCert\Global;..\IncludeCert\CspAPI;..\IncludeCert\SafeChannel_Tool;..\IncludeCert;..\IncludeCert\Tool"
+				AdditionalIncludeDirectories="..\IncludeCert\App;..\IncludeCert\CCID;..\IncludeCert\Global;..\IncludeCert\CspAPI;..\IncludeCert\SafeChannel_Tool;..\IncludeCert;..\IncludeCert\Tool;..\IncludeCert\HASH"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;DERCARDMINIPAY_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -339,6 +339,18 @@
 				</File>
 				<File
 					RelativePath="..\IncludeCert\Tool\tool.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="HASH"
+				>
+				<File
+					RelativePath="..\IncludeCert\Hash\sha1.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\IncludeCert\Hash\sha1.h"
 					>
 				</File>
 			</Filter>

@@ -315,6 +315,7 @@ BOOL PubKeyRsaImport(_In_ DWORD dwIndex, _In_ BYTE * pPubKeyBlob, _In_ DWORD dwP
 	DWORD dwAdfFileID = 0;
 	DWORD dwPubFileID = 0;
 	stuSafeChannelChildStuRsaPublicKeyBlob stuPublicKeyBlob;
+	memset(&stuPublicKeyBlob, 0, sizeof(stuSafeChannelChildStuRsaPublicKeyBlob));
 
 	// 判断文件标示
 	dwAdfFileID = ADF1_FILE_ID;
@@ -395,6 +396,7 @@ BOOL PubKeyRsaExport(_In_ DWORD dwIndex, _Out_ BYTE * pPubKeyBlob, _Out_opt_ DWO
 	DWORD dwAdfFileID = 0;
 	DWORD dwPubFileID = 0;
 	stuSafeChannelChildStuRsaPublicKeyBlob stuPublicKeyBlob;
+	memset(&stuPublicKeyBlob, 0, sizeof(stuSafeChannelChildStuRsaPublicKeyBlob));
 
 	// 判断文件标示
 	dwAdfFileID = ADF1_FILE_ID;
@@ -455,6 +457,8 @@ BOOL PubKeyRsaExport(_In_ DWORD dwIndex, _Out_ BYTE * pPubKeyBlob, _Out_opt_ DWO
 		ret = FALSE;
 		goto END;
 	}
+
+	stuPublicKeyBlob.m_ulKeyBits = 1024;
 	dwPubKeyBlobLength = sizeof(stuSafeChannelChildStuRsaPublicKeyBlob);
 	memcpy(pPubKeyBlob, &stuPublicKeyBlob, dwPubKeyBlobLength);
 	ret = TRUE;
@@ -1091,6 +1095,7 @@ BOOL PubKeyRsaExport2048(_In_ DWORD dwIndex, _Out_ BYTE * pPubKeyBlob, _Out_opt_
 	DWORD dwAdfFileID = 0;
 	DWORD dwPubFileID = 0;
 	stuSafeChannelChildStuRsaPublicKeyBlob stuPublicKeyBlob;
+	memset(&stuPublicKeyBlob, 0, sizeof(stuSafeChannelChildStuRsaPublicKeyBlob));
 
 	// 判断文件标示
 	dwAdfFileID = ADF3_FILE_ID;
@@ -1151,6 +1156,8 @@ BOOL PubKeyRsaExport2048(_In_ DWORD dwIndex, _Out_ BYTE * pPubKeyBlob, _Out_opt_
 		ret = FALSE;
 		goto END;
 	}
+
+	stuPublicKeyBlob.m_ulKeyBits = 2048;
 	dwPubKeyBlobLength = sizeof(stuSafeChannelChildStuRsaPublicKeyBlob);
 	memcpy(pPubKeyBlob, &stuPublicKeyBlob, dwPubKeyBlobLength);
 	ret = TRUE;
